@@ -1,0 +1,103 @@
+{% extends "panel/base.html" %}
+{% block title %}{{ d.name }}{% endblock %}
+{% block content %}
+<div class="header">
+  <h1>{{ d.name }}</h1>
+  <a class="btn btn-secondary" href="/panel/doctors">Volver</a>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-h">Editar médico</div>
+    <div style="padding:1rem">
+      <p>
+        <span class="muted">Estado:</span> <span class="badge b-{{ d.status }}">{{ d.status }}</span>
+        {% if not shifts %}
+        <span class="badge b-available">sin calendario</span>
+        {% elif on_shift %}
+        <span class="badge b-available">en horario</span>
+        {% else %}
+        <span class="badge b-offline">fuera de horario</span>
+        {% endif %}
+      </p>
+      <p class="muted">Carga hoy: {{ load_today }}
+        {% if d.active_consultation_id %}
+        · activa <a href="/panel/consultations/{{ d.active_consultation_id }}">#{{ d.active_consultation_id }}</a>
+        {% endif %}
+      </p>
+      <form method="post" action="/panel/doctors/{{ d.id }}/edit">
+        <label>Nombre
+          <input type="text" name="name" required value="{{ d.name }}" maxlength="120" />
+        </label>
+        <label>ID de canal
+          <input type="text" name="external_id" required value="{{ d.external_id }}" maxlength="64" />
+        </label>
+        <label>Colegiatura (CMP, CQFP, …)
+          <input type="text" name="license_code" value="{{ d.license_code or '' }}" maxlength="40" />
+        </label>
+        <label>Especialidad
+          <select name="specialty">
+            {% for s in specialties %}
+            <option value="{{ s }}" {% if (d.specialty or 'general') == s %}selected{% endif %}>{{ specialty_label(s) }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button class="btn" type="submit">Guardar</button>
+      </form>
+      <form method="post" action="/panel/doctors/{{ d.id }}/offline" style="margin-top:1rem" onsubmit="return confirm('¿Marcar offline? Si tiene un caso activo, vuelve a la cola.');">
+        <button class="btn btn-danger" type="submit">Marcar offline (desapareció)</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-h">Turnos horarios (hora Perú)</div>
+    <div style="padding:1rem">
+      <p class="muted" style="margin-top:0">
+        Sin franjas el médico puede recibir casos a cualquier hora si está /disponible.
+        Con franjas, la asignación automática solo ocurre dentro del horario.
+        /disponible fuera de horario cuenta como hora extra y sí puede tomar cola.
+      </p>
+      <table>
+        <thead>
+          <tr><th>Día</th><th>Inicio</th><th>Fin</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for s in shifts %}
+          <tr>
+            <td>{% for n, lab in weekdays %}{% if n == s.weekday %}{{ lab }}{% endif %}{% endfor %}</td>
+            <td>{{ s.start_hm }}</td>
+            <td>{{ s.end_hm }}</td>
+            <td>
+              <form method="post" action="/panel/doctors/{{ d.id }}/shifts/{{ s.id }}/delete">
+                <button class="btn btn-sm btn-secondary" type="submit">Quitar</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="muted">Sin franjas (sin restricción).</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <form method="post" action="/panel/doctors/{{ d.id }}/shifts" class="form-grid" style="margin-top:1rem">
+        <label>Día
+          <select name="weekday">
+            {% for n, lab in weekdays %}
+            <option value="{{ n }}">{{ lab }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Desde
+          <input type="time" name="start_hm" required value="08:00" />
+        </label>
+        <label>Hasta
+          <input type="time" name="end_hm" required value="14:00" />
+        </label>
+        <div style="align-self:end">
+          <button class="btn" type="submit">Agregar turno</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

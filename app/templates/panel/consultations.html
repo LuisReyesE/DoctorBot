@@ -1,0 +1,45 @@
+{% extends "panel/base.html" %}
+{% block title %}Consultas{% endblock %}
+{% block content %}
+<div class="header">
+  <h1>Consultas</h1>
+</div>
+<div class="filters">
+  <a href="/panel/consultations" class="{% if not status %}active{% endif %}">Todas</a>
+  {% for s in statuses %}
+  <a href="/panel/consultations?status={{ s }}" class="{% if status == s %}active{% endif %}">{{ s }}</a>
+  {% endfor %}
+</div>
+<div class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Paciente</th>
+        <th>ID canal</th>
+        <th>Médico</th>
+        <th>Estado</th>
+        <th>PDF</th>
+        <th>Recordatorio</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in items %}
+      <tr>
+        <td>#{{ c.id }}</td>
+        <td>{{ patient_name(c) }}</td>
+        <td class="muted">{{ c.user.external_id }}</td>
+        <td>{{ c.doctor.name if c.doctor else '—' }}</td>
+        <td><span class="badge b-{{ c.status }}">{{ c.status }}</span></td>
+        <td>{% if c.pdf_path %}<a href="/panel/consultations/{{ c.id }}/pdf">Descargar</a>{% else %}—{% endif %}</td>
+        <td class="muted">{% if c.reminder_sent_at %}enviado{% else %}pendiente{% endif %}</td>
+        <td><a class="btn btn-sm" href="/panel/consultations/{{ c.id }}">Detalle</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="8" class="muted">No hay consultas con este filtro.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

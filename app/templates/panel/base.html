@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}Panel{% endblock %} · Doctor Bot</title>
+  <link rel="stylesheet" href="/static/panel.css" />
+</head>
+<body>
+{% if request.url.path != '/panel/login' %}
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">Doctor <span>Bot</span></div>
+    <div class="brand-sub">Panel de gestión centralizado</div>
+    <nav class="nav">
+      <a href="/panel" class="{% if path == '/' %}active{% endif %}">Dashboard</a>
+      <a href="/panel/consultations" class="{% if 'consult' in path %}active{% endif %}">Consultas</a>
+      <a href="/panel/doctors" class="{% if 'doctor' in path %}active{% endif %}">Médicos</a>
+      <a href="/panel/cajas" class="{% if 'caja' in path %}active{% endif %}">Cajas</a>
+      <a href="/panel/users" class="{% if 'user' in path %}active{% endif %}">Usuarios</a>
+      <a href="/panel/payments" class="{% if 'payment' in path %}active{% endif %}">Pagos</a>
+      <a href="/docs" target="_blank">API docs</a>
+      <a href="/panel/logout">Salir</a>
+    </nav>
+  </aside>
+  <main class="main">
+    {% if flash %}<div class="flash">{{ flash }}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script>
+(function () {
+  /* Polling silencioso: lee SQLite vía API y recarga solo si hay cambios (no es WebSocket). */
+  var INTERVAL_MS = 5000;
+  var version = null;
+  setInterval(async function () {
+    if (document.hidden) return;
+    try {
+      var r = await fetch("/panel/api/live", { credentials: "same-origin" });
+      if (!r.ok) return;
+      var data = await r.json();
+      if (version === null) {
+        version = data.v;
+        return;
+      }
+      if (data.v !== version) {
+        version = data.v;
+        location.reload();
+      }
+    } catch (e) { /* silencioso */ }
+  }, INTERVAL_MS);
+})();
+</script>
+{% else %}
+  {% block login %}{% endblock %}
+{% endif %}
+</body>
+</html>

@@ -1,0 +1,101 @@
+{% extends "panel/base.html" %}
+{% block title %}Médicos{% endblock %}
+{% block content %}
+<div class="header">
+  <h1>Médicos</h1>
+</div>
+
+<div class="panel" style="margin-bottom:1.25rem">
+  <div class="panel-h">Agregar médico</div>
+  <div style="padding:1rem">
+    <p class="muted" style="margin-top:0;font-size:0.9rem">
+      Se guarda en la base de datos (SQLite), no en el <code>.env</code>.
+      El <strong>ID de canal</strong> es el <code>chat_id</code> de Telegram del médico
+      (o el teléfono sin + si usas WhatsApp).
+    </p>
+    {% if form_error %}
+    <div class="flash" style="margin-bottom:0.75rem">{{ form_error }}</div>
+    {% endif %}
+    <form method="post" action="/panel/doctors" class="form-grid">
+      <label>
+        Nombre
+        <input type="text" name="name" required placeholder="QF. Ana Pérez o Dr. Luis Soto" maxlength="120" />
+      </label>
+      <label>
+        ID de canal (Telegram chat_id o teléfono)
+        <input type="text" name="external_id" required placeholder="5979740806" maxlength="64" />
+      </label>
+      <label>
+        Colegiatura (CMP, CQFP, …)
+        <input type="text" name="license_code" placeholder="CQFP 12345 o CMP-12345" maxlength="40" />
+      </label>
+      <label>
+        Especialidad (pista, no bloquea cola)
+        <select name="specialty">
+          {% for s in specialties %}
+          <option value="{{ s }}" {% if s == 'general' %}selected{% endif %}>{{ specialty_label(s) }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div style="align-self:end">
+        <button class="btn" type="submit">Agregar médico</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-h">Listado</div>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>ID canal</th>
+        <th>Colegiatura</th>
+        <th>Especialidad</th>
+        <th>Carga hoy</th>
+        <th>Horario ahora</th>
+        <th>Estado</th>
+        <th>Consulta activa</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for d in items %}
+      <tr>
+        <td>{{ d.id }}</td>
+        <td>{{ d.name }}</td>
+        <td class="muted">{{ d.external_id }}</td>
+        <td class="muted">{{ d.license_code or '—' }}</td>
+        <td class="muted">{{ specialty_label(d.specialty) }}</td>
+        <td>{{ loads.get(d.id, 0) }}</td>
+        <td>
+          {% if not shifts_map.get(d.id) %}
+          <span class="badge b-available">sin calendario</span>
+          {% elif on_shift.get(d.id) %}
+          <span class="badge b-available">en horario</span>
+          {% else %}
+          <span class="badge b-offline">fuera de horario</span>
+          {% endif %}
+        </td>
+        <td><span class="badge b-{{ d.status }}">{{ d.status }}</span></td>
+        <td>
+          {% if d.active_consultation_id %}
+          <a href="/panel/consultations/{{ d.active_consultation_id }}">#{{ d.active_consultation_id }}</a>
+          {% else %}—{% endif %}
+        </td>
+        <td><a class="btn btn-sm" href="/panel/doctors/{{ d.id }}">Editar</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="muted">Aún no hay médicos. Agrega uno arriba o usa el seed del .env al arrancar.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<p class="muted" style="margin-top:1rem">
+  Los médicos cambian estado con comandos en el bot: /disponible, /ocupado, /fuera.
+  Los turnos horarios se editan en cada médico. Sin franjas = sin restricción de calendario.
+  El <code>.env</code> (<code>SEED_DOCTOR_ID</code> / <code>SEED_DOCTOR_NAME</code>) solo crea el médico demo la primera vez que arranca la API.
+</p>
+{% endblock %}

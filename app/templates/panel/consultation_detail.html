@@ -1,0 +1,84 @@
+{% extends "panel/base.html" %}
+{% block title %}Consulta #{{ c.id }}{% endblock %}
+{% block content %}
+<div class="header">
+  <h1>Consulta #{{ c.id }}</h1>
+  <div>
+    {% if c.pdf_path %}
+    <a class="btn" href="/panel/consultations/{{ c.id }}/pdf">Descargar PDF</a>
+    {% endif %}
+    <a class="btn btn-secondary" href="/panel/consultations">Volver</a>
+  </div>
+</div>
+
+{% if can_reassign or can_force_close %}
+<div class="panel" style="margin-bottom:1.25rem">
+  <div class="panel-h">Operaciones</div>
+  <div style="padding:1rem" class="ops-row">
+    {% if can_reassign %}
+    <form method="post" action="/panel/consultations/{{ c.id }}/reassign" class="ops-form">
+      <label>
+        Reasignar a
+        <select name="doctor_id" required>
+          <option value="">— elegir médico —</option>
+          {% for d in candidates %}
+          <option value="{{ d.id }}">{{ d.name }} ({{ d.status }} · {{ specialty_label(d.specialty) }})</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="btn" type="submit">Reasignar</button>
+    </form>
+    {% endif %}
+    {% if can_force_close %}
+    <form method="post" action="/panel/consultations/{{ c.id }}/force-close" onsubmit="return confirm('¿Cerrar esta consulta desde el panel?');">
+      <button class="btn btn-danger" type="submit">Forzar cierre</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-h">Ficha</div>
+    <div style="padding:1rem">
+      <p><span class="muted">Estado:</span> <span class="badge b-{{ c.status }}">{{ c.status }}</span></p>
+      <p><span class="muted">Paciente (triaje):</span> {{ patient_name(c) }}</p>
+      <p><span class="muted">Cuenta / ID canal:</span> {{ c.user.external_id }}{% if c.user.name %} · perfil: {{ c.user.name }}{% endif %}</p>
+      <p><span class="muted">Médico:</span> {{ doctor_credentials(c.doctor) }}</p>
+      <p><span class="muted">Creada:</span> {{ c.created_at|lima }}</p>
+      <p><span class="muted">Asignada:</span> {{ c.assigned_at|lima }}</p>
+      <p><span class="muted">Cerrada:</span> {{ c.closed_at|lima }}</p>
+      <p><span class="muted">Recordatorio 48h:</span> {% if c.reminder_sent_at %}{{ c.reminder_sent_at|lima }}{% else %}pendiente{% endif %}</p>
+      <hr style="border-color:var(--border)" />
+      <p><strong>Triaje</strong></p>
+      <pre style="white-space:pre-wrap;color:var(--muted);font-size:0.85rem">{{ triage_pretty }}</pre>
+      {% if has_photo %}
+      <p><strong>Foto adjunta</strong></p>
+      <p>
+        <a href="/panel/consultations/{{ c.id }}/photo" target="_blank">
+          <img class="triage-photo" src="/panel/consultations/{{ c.id }}/photo" alt="Foto de triaje" />
+        </a>
+      </p>
+      {% endif %}
+      {% if c.orientation_text %}
+      <p><strong>Orientación</strong></p>
+      <pre style="white-space:pre-wrap;font-size:0.9rem">{{ c.orientation_text }}</pre>
+      {% endif %}
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-h">Mensajes ({{ messages|length }})</div>
+    <ul class="msg-list">
+      {% for m in messages %}
+      <li class="role-{{ m.from_role }}">
+        <div class="meta">{{ m.from_role }} · {{ m.direction }} · {{ m.created_at|lima }}</div>
+        <div>{{ m.body }}</div>
+      </li>
+      {% else %}
+      <li class="muted">Sin mensajes registrados.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

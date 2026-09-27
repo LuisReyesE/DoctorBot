@@ -1,0 +1,65 @@
+{% extends "panel/base.html" %}
+{% block title %}Cajas{% endblock %}
+{% block content %}
+<div class="header">
+  <h1>Cajas / verificadores</h1>
+</div>
+
+<div class="panel" style="margin-bottom:1.25rem">
+  <div class="panel-h">Agregar caja</div>
+  <div style="padding:1rem">
+    <p class="muted" style="margin-top:0;font-size:0.9rem">
+      Es <strong>otro número</strong> (chat de Telegram o WhatsApp), no el Yape donde llega el dinero.
+      Recibe la ficha y confirma con <code>/confirmar CÓDIGO</code>. Caja 1, Caja 2…
+    </p>
+    {% if form_error %}
+    <div class="flash" style="margin-bottom:0.75rem">{{ form_error }}</div>
+    {% endif %}
+    <form method="post" action="/panel/cajas" class="form-grid">
+      <label>
+        Nombre
+        <input type="text" name="name" required placeholder="Caja 1" maxlength="120" />
+      </label>
+      <label>
+        ID de canal (Telegram chat_id o teléfono)
+        <input type="text" name="external_id" required placeholder="5979740806" maxlength="64" />
+      </label>
+      <div style="align-self:end">
+        <button class="btn" type="submit">Agregar caja</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-h">Listado</div>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>ID canal</th>
+        <th>Alta</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in items %}
+      <tr>
+        <td>{{ v.id }}</td>
+        <td>{{ v.name }}</td>
+        <td class="muted">{{ v.external_id }}</td>
+        <td class="muted">{{ v.created_at|lima }}</td>
+        <td>
+          <form method="post" action="/panel/cajas/{{ v.id }}/delete" onsubmit="return confirm('¿Quitar esta caja?');">
+            <button class="btn btn-sm btn-danger" type="submit">Quitar</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" class="muted">Aún no hay cajas. Agrega al menos un número para que las fichas lleguen al chat.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

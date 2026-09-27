@@ -1,0 +1,41 @@
+{% extends "panel/base.html" %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<div class="header">
+  <h1>Usuarios / pacientes</h1>
+</div>
+<div class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>ID canal</th>
+        <th>Doc. titular</th>
+        <th>Consentimiento</th>
+        <th>Suscripción</th>
+        <th>Plan</th>
+        <th>Vence</th>
+        <th>Consultas</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in items %}
+      <tr>
+        <td>{{ u.id }}</td>
+        <td>{{ u.name or '—' }}</td>
+        <td>{{ u.external_id }}</td>
+        <td class="muted">{{ holder_document(u) }}</td>
+        <td class="muted">{% if u.consent_version %}{{ u.consent_version }} · {{ u.consent_accepted_at|lima }}{% else %}—{% endif %}</td>
+        <td><span class="badge b-{{ u.subscription_status }}">{{ u.subscription_status }}</span></td>
+        <td>{{ u.subscription_plan or '—' }}</td>
+        <td class="muted">{{ u.subscription_expires_at|lima }}</td>
+        <td>{{ u.consultations|length }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9" class="muted">Sin usuarios.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

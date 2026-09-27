@@ -1,0 +1,55 @@
+{% extends "panel/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="header">
+  <h1>Dashboard</h1>
+  <form method="post" action="/panel/reminders/run">
+    <button class="btn btn-secondary" type="submit">Ejecutar recordatorios 48h ahora</button>
+  </form>
+</div>
+
+<div class="cards">
+  <div class="card"><div class="label">Consultas abiertas</div><div class="value">{{ stats.open }}</div></div>
+  <div class="card"><div class="label">En cola</div><div class="value">{{ stats.queued }}</div></div>
+  <div class="card"><div class="label">Cerradas</div><div class="value">{{ stats.closed }}</div></div>
+  <div class="card"><div class="label">Emergencias</div><div class="value">{{ stats.emergency }}</div></div>
+  <div class="card"><div class="label">Médicos disponibles</div><div class="value">{{ stats.doctors_available }}</div></div>
+  <div class="card"><div class="label">Suscriptores / prueba</div><div class="value">{{ stats.subs_active }}</div></div>
+  <div class="card"><div class="label">Cajas</div><div class="value">{{ stats.cajas }}</div></div>
+  <div class="card">
+    <div class="label">Pagos pendientes</div>
+    <div class="value">{{ stats.payments_pending }}</div>
+    <div class="muted" style="margin-top:0.35rem"><a href="/panel/payments?status=pending">Ver caja</a></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-h">Últimas consultas</div>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Paciente</th>
+        <th>Médico</th>
+        <th>Estado</th>
+        <th>Creada</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for c in recent %}
+      <tr>
+        <td>#{{ c.id }}</td>
+        <td>{{ patient_name(c) }}</td>
+        <td>{{ c.doctor.name if c.doctor else '—' }}</td>
+        <td><span class="badge b-{{ c.status }}">{{ c.status }}</span></td>
+        <td class="muted">{{ c.created_at|lima }}</td>
+        <td><a class="btn btn-sm" href="/panel/consultations/{{ c.id }}">Ver</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="muted">Sin consultas aún. Usa el bot o /dev/simulate.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

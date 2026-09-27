@@ -1,0 +1,90 @@
+{% extends "panel/base.html" %}
+{% block title %}Caja / Pagos{% endblock %}
+{% block content %}
+<div class="header">
+  <h1>Caja (Yape / Plin)</h1>
+</div>
+<p class="muted" style="margin-top:-0.5rem">
+  El dinero llega al Yape del proyecto{% if yape_phone %} (<code>{{ yape_phone }}</code>{% if yape_name %} · {{ yape_name }}{% endif %}){% endif %}.
+  Las cajas confirman la ficha en el bot o aquí.
+  {% if pending_n %}<strong>{{ pending_n }} pendiente{{ 's' if pending_n != 1 else '' }}</strong>.{% endif %}
+</p>
+
+<div class="filters">
+  <a href="/panel/payments" class="{% if not status %}active{% endif %}">Todos</a>
+  <a href="/panel/payments?status=pending" class="{% if status == 'pending' %}active{% endif %}">Pendientes</a>
+  <a href="/panel/payments?status=paid" class="{% if status == 'paid' %}active{% endif %}">Pagados</a>
+  <a href="/panel/payments?status=failed" class="{% if status == 'failed' %}active{% endif %}">Rechazados</a>
+</div>
+<form class="ops-form" method="get" action="/panel/payments" style="margin-bottom:1rem">
+  {% if status %}<input type="hidden" name="status" value="{{ status }}" />{% endif %}
+  <label>
+    Buscar código / nombre / celular
+    <input type="text" name="q" value="{{ q or '' }}" placeholder="SALUD-K7P2 o 999888777" />
+  </label>
+  <button class="btn" type="submit">Buscar</button>
+</form>
+
+<div class="panel">
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Código</th>
+        <th>Nombre Yape</th>
+        <th>Celular</th>
+        <th>Plan</th>
+        <th>Monto</th>
+        <th>Voucher</th>
+        <th>Estado</th>
+        <th>Caja</th>
+        <th>Fecha</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in items %}
+      <tr>
+        <td>{{ p.id }}</td>
+        <td><code>{{ pay_code(p.reference) }}</code></td>
+        <td>{{ p.yape_name or p.user.name or p.user.external_id }}</td>
+        <td class="muted">{{ p.yape_phone or '—' }}</td>
+        <td>{{ p.plan }}</td>
+        <td>S/ {{ '%.2f'|format(p.amount) }}</td>
+        <td>
+          {% if p.voucher_path %}
+          <a href="/panel/payments/{{ p.id }}/voucher" target="_blank">
+            <img class="voucher-thumb" src="/panel/payments/{{ p.id }}/voucher" alt="Voucher {{ pay_code(p.reference) }}" />
+          </a>
+          {% else %}
+          <span class="muted">sin foto</span>
+          {% endif %}
+        </td>
+        <td><span class="badge b-{{ p.status }}">{{ p.status }}</span></td>
+        <td class="muted">{{ p.verifier.name if p.verifier else '—' }}</td>
+        <td class="muted">{{ (p.paid_at or p.created_at)|lima }}</td>
+        <td>
+          {% if p.status == 'pending' %}
+          <form method="post" action="/panel/payments/{{ p.id }}/confirm" style="display:inline">
+            <button class="btn btn-sm btn-ok" type="submit">Confirmar</button>
+          </form>
+          <form method="post" action="/panel/payments/{{ p.id }}/reject" style="display:inline;margin-top:0.35rem">
+            <input type="text" name="reason" placeholder="Motivo" style="margin:0.25rem 0;min-width:8rem" />
+            <button class="btn btn-sm btn-danger" type="submit">Rechazar</button>
+          </form>
+          {% elif p.notes %}
+          <span class="muted">{{ p.notes }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="11" class="muted">
+          Sin pagos. El paciente elige opción 3, completa nombre y celular de Yape, y manda la captura.
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
